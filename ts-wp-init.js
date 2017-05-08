@@ -64,41 +64,40 @@ const log = (label, contents, color = chalk.cyan, labelColor = chalk.green) => {
 
 log('Init', targetDir, chalk.yellow, chalk.reset);
 
-Promise
-  .mapSeries(commands, command => {
-    log('Executing', command);
-    return proc.execAsync(command).then(
-      ([stdout, stderr]) => {
-        if (args.verbose) {
-          console.log(chalk.dim.white(stdout));
-        }
-        if (stderr && args.stderr) {
-          console.log(chalk.dim.red(stderr));
-        }
-      },
-      bail
-    );
-  })
-  .then(() => {
-    log('Writing', 'tsconfig.json');
-    return fs.writeFileAsync(
-      'tsconfig.json',
-      JSON.stringify({
-        compilerOptions: {
-          module: 'commonjs',
-          target: 'es5',
-          noImplicitAny: false,
-          sourceMap: false,
-          jsx: 'react'
-        }
-      }),
-      'utf-8'
-    );
-  })
-  .then(() => {
-    log('Writing', 'webpack.config.json');
+async function writeFile(filename, contents, encoding = 'utf8') {
+  log('Writing', filename);
+  await fs.writeFileAsync(filename, contents, encoding);
+}
 
-    const contents = `const path = require('path');
+async function writeJson(filename, object) {
+  await writeFile(filename, JSON.stringify(object, undefined, 2));
+}
+
+async function run() {
+  for (const command of commands) {
+    log('Executing', command);
+    const [stdout, stderr] = await proc.execAsync(command);
+    if (args.verbose) {
+      console.log(chalk.dim.white(stdout));
+    }
+    if (stderr && args.stderr) {
+      console.log(chalk.dim.red(stderr));
+    }
+  }
+
+  await writeJson('tsconfig.json', {
+    compilerOptions: {
+      module: 'commonjs',
+      target: 'es5',
+      noImplicitAny: false,
+      sourceMap: false,
+      jsx: 'react'
+    }
+  });
+
+  await writeFile(
+    'webpack.config.js',
+    `const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
@@ -133,16 +132,14 @@ module.exports = {
     })
   ]
 };
-`;
-    return fs.writeFileAsync('webpack.config.js', contents, 'utf-8');
-  })
-  .then(() => {
-    log('Creating', 'src/');
-    return fs.mkdirAsync('src');
-  })
-  .then(() => {
-    log('Writing', 'src/index.html');
-    const contents = `<!doctype html>
+`);
+
+  log('Creating', 'src/');
+  await fs.mkdirAsync('src');
+
+  await writeFile(
+    'src/index.html',
+    `<!doctype html>
 <html>
   <head>
     <title>${path.dirname(targetDir)}</title>
@@ -151,34 +148,27 @@ module.exports = {
   <body>
     <div id="app"></div>
   </body>
-</html>`;
+</html>`);
 
-    return fs.writeFileAsync('src/index.html', contents, 'utf-8');
-  })
-  .then(() => {
-    log('Writing', 'src/index.tsx');
-
-    const contents = `
-import * as React from 'react';
+  await writeFile('src/index.tsx',
+    `import * as React from 'react';
 import { render } from 'react-dom';
 
 render(
   <div>Hello, World!</div>,
   document.getElementById('app')
 );
-`;
-    return fs.writeFileAsync('src/index.tsx', contents, 'utf-8');
-  })
-  .then(() => {
-    log('Patching', `package.json (adding start script)`);
+`);
 
-    const package = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
+  log('Patching', `package.json (adding start script)`);
+  const package = JSON.parse(await fs.readFileAsync('package.json', 'utf-8'));
 
-    if (!package.scripts) {
-      package.scripts = {};
-    }
+  if (!package.scripts) {
+    package.scripts = {};
+  }
 
-    package.scripts.start = "webpack-dev-server -d --hot --content-base=dist/";
-    return fs.writeFileAsync('package.json', JSON.stringify(package, undefined, 2));
-  })
-  .catch(bail);
+  package.scripts.start = "webpack-dev-server -d --hot --content-base=dist/";
+  await writeJson('package.json', package);
+}
+
+run().catch(bail);
