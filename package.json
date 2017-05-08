@@ -1,11 +1,9 @@
 {
   "name": "ts-wp-init",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "ts-wp-init.js",
   "license": "MIT",
-  "bin": {
-    "ts-wp-init": "index.js"
-  },
+  "bin": "./ts-wp-init.js",
   "dependencies": {
     "bluebird": "^3.4.7",
     "chalk": "^1.1.3",

@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const Promise = require('bluebird');
 const path = require('path');
 const args = require('yargs').argv;
@@ -6,7 +7,7 @@ const fs = Promise.promisifyAll(require('fs'));
 const proc = Promise.promisifyAll(require('child_process'), {multiArgs: true});
 const chalk = require('chalk');
 
-const targetDir = path.resolve(args._[0] || __dirname);
+const targetDir = path.resolve(args._[0] || process.cwd());
 
 if (!fs.existsSync(targetDir)) {
   fs.mkdirSync(targetDir);
