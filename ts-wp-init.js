@@ -35,7 +35,7 @@ const packages = [
   'url-loader',
   'style-loader',
   'css-loader',
-  'ts-loader'
+  'awesome-typescript-loader'
 ];
 
 const commands = ['yarn init --yes', `yarn add -D ${packages.join(' ')}`];
@@ -107,13 +107,13 @@ module.exports = {
     filename: 'app.js'
   },
   resolve: {
-    extensions: ['.js', '.ts', '.tsx']
+    extensions: ['.ts', '.tsx', '.js', '.jsx']
   },
   module: {
     rules: [
       {
         test: /\.tsx?$/,
-        loader: 'ts-loader'
+        loader: 'awesome-typescript-loader'
       },
       {
         test: /\.less$/,
