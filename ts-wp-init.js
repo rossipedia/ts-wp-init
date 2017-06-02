@@ -38,7 +38,7 @@ const packages = [
   'ts-loader'
 ];
 
-const commands = ['yarn init --yes', `yarn add ${packages.join(' ')}`];
+const commands = ['yarn init --yes', `yarn add -D ${packages.join(' ')}`];
 
 const bail = e => {
   console.error(e);
