@@ -100,11 +100,12 @@ async function run() {
 
   await writeJson('tsconfig.json', {
     compilerOptions: {
-      module: 'commonjs',
-      target: 'es5',
-      noImplicitAny: false,
-      sourceMap: false,
+      module: 'ES2015',
+      target: 'esnext',
+      noImplicitAny: true,
+      sourceMap: true,
       jsx: 'react',
+      noErrorTruncation: true,
     },
   });
 
@@ -122,6 +123,7 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx']
   },
+  devtool: 'source-maps',
   module: {
     rules: [
       {
@@ -165,30 +167,34 @@ module.exports = {
     'src/index.tsx',
     `import * as React from 'react';
 import { render } from 'react-dom';
+import styled from 'react-emotion';
+
+const Message = styled.div\`
+    font-size: 24px;
+    font-weight: bold;
+    font-family: sans-serif;
+    color: maroon;
+    text-align: center;
+    text-decoration: underline;
+\`;
 
 render(
-  <div>Hello, World!</div>,
+  <Message>Hello, World!</Message>,
   document.getElementById('app')
 );
 `,
   );
 
-  await writeFile(
-    '.babelrc',
-    `{
-  "plugins": ["emotion"]
-}`
-  );
+  await writeJson('.babelrc', {
+    plugins: ['emotion'],
+  });
 
-  await writeFile(
-    '.prettierrc',
-    `{
-  "tabWidth": 2,
-  "semi": true,
-  "singleQuote": true,
-  "printWidth": 80
-}`
-  );
+  await writeJson('.prettierrc', {
+    tabWidth: 2,
+    semi: true,
+    singleQuote: true,
+    printWidth: 80,
+  });
 
   log('Patching', `package.json (adding start script)`);
   const pkg = JSON.parse(await readFileAsync('package.json', 'utf-8'));

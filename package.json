@@ -4,6 +4,10 @@
   "main": "dist/ts-wp-init.js",
   "license": "MIT",
   "bin": "dist/ts-wp-init.js",
+  "scripts" : {
+    "build": "tsc",
+    "prepare": "tsc"
+  },
   "dependencies": {
     "chalk": "^1.1.3",
     "wordwrap": "^1.0.0",
