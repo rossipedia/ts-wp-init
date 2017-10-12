@@ -100,12 +100,13 @@ async function run() {
 
   await writeJson('tsconfig.json', {
     compilerOptions: {
-      module: 'ES2015',
-      target: 'esnext',
-      noImplicitAny: true,
-      sourceMap: true,
       jsx: 'react',
+      module: 'es2015',
+      moduleResolution: 'node',
       noErrorTruncation: true,
+      sourceMap: true,
+      rootDir: './src',
+      target: 'es2017',
     },
   });
 
@@ -203,7 +204,7 @@ render(
     pkg.scripts = {};
   }
 
-  pkg.scripts.start = 'webpack-dev-server -d --hot --content-base=dist/';
+  pkg.scripts.start = 'webpack-dev-server --debug --output-pathinfo --hot --content-base=dist/';
   await writeJson('package.json', pkg);
 }
 
