@@ -1,12 +1,18 @@
 #!/usr/bin/env node
-const Promise = require('bluebird');
-const path = require('path');
-const args = require('yargs').argv;
+import * as path from 'path';
+import * as yargs from 'yargs';
+import * as fs from 'fs';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import * as chalk from 'chalk';
 
-const fs = Promise.promisifyAll(require('fs'));
-const proc = Promise.promisifyAll(require('child_process'), {multiArgs: true});
-const chalk = require('chalk');
+const readFileAsync = promisify(fs.readFile);
+const writeFileAsync = promisify(fs.writeFile);
+const mkdirAsync = promisify(fs.mkdir);
 
+const execAsync = promisify(exec);
+
+const args = yargs.argv;
 const targetDir = path.resolve(args._[0] || process.cwd());
 
 if (!fs.existsSync(targetDir)) {
@@ -26,57 +32,64 @@ const packages = [
   'react-dom',
   '@types/react',
   '@types/react-dom',
+  'babel-core',
+  'babel-loader',
   'webpack',
   'webpack-dev-server',
   'html-webpack-plugin',
-  'less',
-  'less-loader',
-  'file-loader',
-  'url-loader',
-  'style-loader',
-  'css-loader',
-  'awesome-typescript-loader'
+  'emotion',
+  'react-emotion',
+  'babel-plugin-emotion',
+  'ts-loader',
 ];
 
 const commands = ['yarn init --yes', `yarn add -D ${packages.join(' ')}`];
 
-const bail = e => {
+const bail = (e: Error) => {
   console.error(e);
   process.exit(-1);
 };
 
 // rightPad, because I'm a rebel
-function rightPad(s, len) {
+function rightPad(s: string, len: number): string {
   if (s.length >= len) return s;
   let pad = len - s.length;
-  while (pad-- > 0)
-    s += ' ';
+  while (pad-- > 0) s += ' ';
   return s;
 }
 
 const firstColumWidth = 12;
 const wrap = require('wordwrap')(12, 80);
 
-const log = (label, contents, color = chalk.cyan, labelColor = chalk.green) => {
+const log = (
+  label: string,
+  contents: string,
+  color = chalk.cyan,
+  labelColor = chalk.green,
+) => {
   process.stdout.write(labelColor(rightPad(label, firstColumWidth)));
   console.log(color(wrap(contents).trim()));
 };
 
 log('Init', targetDir, chalk.yellow, chalk.reset);
 
-async function writeFile(filename, contents, encoding = 'utf8') {
+async function writeFile(
+  filename: string,
+  contents: string | Buffer,
+  encoding = 'utf8',
+) {
   log('Writing', filename);
-  await fs.writeFileAsync(filename, contents, encoding);
+  await writeFileAsync(filename, contents, encoding);
 }
 
-async function writeJson(filename, object) {
+async function writeJson(filename: string, object: any) {
   await writeFile(filename, JSON.stringify(object, undefined, 2));
 }
 
 async function run() {
   for (const command of commands) {
     log('Executing', command);
-    const [stdout, stderr] = await proc.execAsync(command);
+    const { stdout, stderr } = await execAsync(command);
     if (args.verbose) {
       console.log(chalk.dim.white(stdout));
     }
@@ -91,8 +104,8 @@ async function run() {
       target: 'es5',
       noImplicitAny: false,
       sourceMap: false,
-      jsx: 'react'
-    }
+      jsx: 'react',
+    },
   });
 
   await writeFile(
@@ -113,11 +126,7 @@ module.exports = {
     rules: [
       {
         test: /\.tsx?$/,
-        loader: 'awesome-typescript-loader'
-      },
-      {
-        test: /\.less$/,
-        use: ['style-loader', 'css-loader', 'less-loader']
+        use: ['babel-loader', 'ts-loader']
       },
       {
         test: /\.(svg|gif|png|jpg)$/,
@@ -132,10 +141,11 @@ module.exports = {
     })
   ]
 };
-`);
+`,
+  );
 
   log('Creating', 'src/');
-  await fs.mkdirAsync('src');
+  await mkdirAsync('src');
 
   await writeFile(
     'src/index.html',
@@ -148,9 +158,11 @@ module.exports = {
   <body>
     <div id="app"></div>
   </body>
-</html>`);
+</html>`,
+  );
 
-  await writeFile('src/index.tsx',
+  await writeFile(
+    'src/index.tsx',
     `import * as React from 'react';
 import { render } from 'react-dom';
 
@@ -158,17 +170,35 @@ render(
   <div>Hello, World!</div>,
   document.getElementById('app')
 );
-`);
+`,
+  );
+
+  await writeFile(
+    '.babelrc',
+    `{
+  "plugins": ["emotion"]
+}`
+  );
+
+  await writeFile(
+    '.prettierrc',
+    `{
+  "tabWidth": 2,
+  "semi": true,
+  "singleQuote": true,
+  "printWidth": 80
+}`
+  );
 
   log('Patching', `package.json (adding start script)`);
-  const package = JSON.parse(await fs.readFileAsync('package.json', 'utf-8'));
+  const pkg = JSON.parse(await readFileAsync('package.json', 'utf-8'));
 
-  if (!package.scripts) {
-    package.scripts = {};
+  if (!pkg.scripts) {
+    pkg.scripts = {};
   }
 
-  package.scripts.start = "webpack-dev-server -d --hot --content-base=dist/";
-  await writeJson('package.json', package);
+  pkg.scripts.start = 'webpack-dev-server -d --hot --content-base=dist/';
+  await writeJson('package.json', pkg);
 }
 
 run().catch(bail);
