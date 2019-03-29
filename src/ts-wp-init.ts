@@ -34,7 +34,7 @@ async function run() {
   log('Init', targetDir, chalk.yellow, chalk.reset);
 
   process.chdir(targetDir);
-  await runCommand('yarn init --yes'); // kick it off
+  await runCommand('npm init --yes'); // kick it off
 
   await installDevPackages([
     '@types/react',
@@ -90,7 +90,7 @@ async function runCommand(command: string) {
 }
 
 function installDevPackages(packages: string[]) {
-  return runCommand(`yarn add -D ${packages.join(' ')}`);
+  return runCommand(`npm add -D ${packages.join(' ')}`);
 }
 
 function writeEditorConfig() {
