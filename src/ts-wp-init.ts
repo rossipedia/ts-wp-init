@@ -202,10 +202,8 @@ async function writeIndexTsx(filename: string) {
       import * as React from 'react';
       import { render } from 'react-dom';
 
-      class App extends React.Component {
-        render() {
-          return <div>Hello, World!</div>;
-        }
+      function App() {
+        return <div>Hello, World!</div>;
       }
 
       render(<App />, document.getElementById('app'));
